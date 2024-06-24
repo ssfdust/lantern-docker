@@ -29,23 +29,19 @@ jobs:
           sed -n 's/^ Version: \(.*\)/\1/p'
         )" >> $GITHUB_ENV
 
-    - id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: magras/lantern
-        tags: |
-          type=semver,pattern={{version}},value=${{env.LANTERN_VERSION}}
+    - name: Build Docker Image
+      run: >-
+        docker build
+        --tag docker.io/ssfrust/lantern:latest
+        .
 
-    - uses: docker/login-action@v3
-      with:
-        username: magras
-        password: ${{secrets.DOCKERHUB_TOKEN}}
+    - name: Dump Docker Image
+      run: >-
+        docker save
+        docker.io/ssfrust/lantern:latest
+        > lantern.tar
 
-    - uses: docker/build-push-action@v5
+    - name: Upload Docker Image
+      uses: actions/upload-artifact@v2
       with:
-        context: .
-        push: ${{github.ref_type == 'branch' && github.ref_name == 'main'}}
-        tags: ${{steps.meta.outputs.tags}}
-        labels: ${{steps.meta.outputs.labels}}
-        cache-to: type=inline
-        cache-from: type=registry,ref=magras/lantern
+        name: lantern.tar

@@ -1,23 +1,18 @@
 services:
   lantern:
     container_name: lantern
-    image: docker.io/magras/lantern:7.8.6
+    image: docker.io/ssfdust/lantern:7.8.6
     build: .
     ports:
       # UI
-      - target: 80
-        host_ip: 127.0.0.1
-        published: ${UI_PORT}
-        protocol: tcp
-      # HTTP(S) proxy
       - target: 8080
         host_ip: 127.0.0.1
-        published: ${HTTP_PORT}
+        published: 39332
         protocol: tcp
       # SOCKS proxy
       - target: 1080
         host_ip: 127.0.0.1
-        published: ${SOCKS_PORT}
+        published: 39331
         protocol: tcp
     volumes:
       - data:/home/lantern/.lantern
