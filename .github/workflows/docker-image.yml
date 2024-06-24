@@ -2,8 +2,14 @@ name: Docker Image CI
 
 on:
   workflow_dispatch:
+    inputs:
+      dev:
+        description: "Run as development?"
+        type: boolean
+        required: true
+        default: false
   push:
-    branches: [ "main" ]
+    branches: [ "ci" ]
     paths:
       - ".github/workflows/docker-image.yml"
       - "Dockerfile"
@@ -25,9 +31,13 @@ jobs:
 
     - run: >-
         echo "LANTERN_VERSION=$(
-          dpkg-deb -I binaries/lantern-installer-64-bit.deb |
+          wget -q https://github.com/getlantern/lantern-binaries/raw/main/lantern-installer-64-bit.deb -O lantern-installer-64-bit.deb
+          dpkg-deb -I lantern-installer-64-bit.deb |
           sed -n 's/^ Version: \(.*\)/\1/p'
         )" >> $GITHUB_ENV
+
+    - run: >-
+        echo "DATE=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
 
     - name: Build Docker Image
       run: >-
@@ -44,4 +54,14 @@ jobs:
     - name: Upload Docker Image
       uses: actions/upload-artifact@v2
       with:
-        name: lantern.tar
+        path: lantern.tar
+
+    - name: Create tag and release
+      uses: softprops/action-gh-release@v0.1.14
+      if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dev == 'false') }}
+      with:
+        name: Lantern image ${{ env.LANTERN_VERSION }} Build ${{ env.DATE }}
+        tag_name: ${{ env.DATE }}
+        body: lantern ${{ env.LANTERN_VERSION }} Build ${{ env.DATE }}
+        files: |
+          lantern.tar
